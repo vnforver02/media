@@ -16,17 +16,22 @@ export default function AdminUsersPage() {
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({ username: '', email: '', password: '' });
 
-  const fetchUsers = async () => {
-    try {
-      const res = await fetch('/api/admin-users');
-      const data = await res.json();
+ const fetchUsers = async () => {
+  try {
+    const res = await fetch('/api/admin-users');
+    const data = await res.json();
+    // 关键：增加 Array.isArray 判断，防止 data 不是数组时导致 .map() 崩溃
+    if (Array.isArray(data)) {
       setUsers(data);
-    } catch (error) {
-      console.error('Failed to fetch users:', error);
-    } finally {
-      setLoading(false);
+    } else {
+      setUsers([]);
     }
-  };
+  } catch (error) {
+    setUsers([]);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => { fetchUsers(); }, []);
 

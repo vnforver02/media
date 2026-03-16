@@ -32,8 +32,10 @@ export async function PUT(request: Request) {
   try {
     const { id, is_published, featured, title_en } = await request.json();
 
+   
+      // 在 PUT 方法中
     if (is_published !== undefined) {
-      await sql`UPDATE services SET is_published = ${is_published}, updated_at = NOW() WHERE id = ${id}`;
+  await sql`UPDATE services SET is_published = ${is_published}, updated_at = NOW() WHERE id = ${id}`;
     } else if (featured !== undefined) {
       await sql`UPDATE services SET featured = ${featured}, updated_at = NOW() WHERE id = ${id}`;
     } else if (title_en !== undefined) {
