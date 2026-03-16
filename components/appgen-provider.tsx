@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 
 // Console capture — runs at module scope for immediate capture (before React hydration)
-import "@/lib/console-capture";
 // Screenshot capture utility — auto-initializes on import
 import "@/utils/screenshot-capture";
 
