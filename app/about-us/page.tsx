@@ -6,13 +6,41 @@ import { useLanguageStore, type Language } from '@/lib/languageStore';
 import { translations } from '@/lib/translations';
 import LanguageSwitcher from '@/components/site/LanguageSwitcher';
 
+interface SiteSettings {
+  company_email?: string;
+  company_phone?: string;
+  company_phone_whatsapp?: string;
+}
+
 export default function AboutUsPage() {
   const router = useRouter();
   const { language } = useLanguageStore();
   const [mounted, setMounted] = useState(false);
+  const [settings, setSettings] = useState<SiteSettings>({});
 
   useEffect(() => {
     setMounted(true);
+    
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch('/api/site-settings?t=' + Date.now()); // 防止缓存
+        const data = await res.json();
+        console.log('[About Us Page] Fetched site settings:', data);
+        setSettings(data[0] || {});
+      } catch (error) {
+        console.error('Failed to fetch site settings:', error);
+      }
+    };
+    
+    fetchSettings();
+    
+    // 自动刷新：每 5 秒检查一次新数据
+    const interval = setInterval(() => {
+      console.log('[About Us Page] Auto-refreshing site settings...');
+      fetchSettings();
+    }, 5000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   if (!mounted) return null;
@@ -415,15 +443,15 @@ export default function AboutUsPage() {
                     <ul className="space-y-4 text-sm text-gray-400">
                         <li className="flex items-start gap-3">
                             <i className="ph ph-map-pin-line text-lg text-brand-primary shrink-0"></i>
-                            <span>District 1, Ho Chi Minh City,<br />Vietnam</span>
+                            <span>{settings.address_en || 'District 1, Ho Chi Minh City,<br />Vietnam'}</span>
                         </li>
                         <li className="flex items-center gap-3">
                             <i className="ph ph-envelope-simple text-lg text-brand-primary shrink-0"></i>
-                            <a href="mailto:hello@mediatoday.com.vn" className="hover:text-white transition-colors">hello@mediatoday.com.vn</a>
+                            <a href={`mailto:${settings.company_email || 'hello@mediatoday.com.vn'}`} className="hover:text-white transition-colors">{settings.company_email || 'hello@mediatoday.com.vn'}</a>
                         </li>
                         <li className="flex items-center gap-3">
                             <i className="ph ph-phone text-lg text-brand-primary shrink-0"></i>
-                            <span>+84 (0) 123 456 789</span>
+                            <a href={`tel:${(settings.company_phone || '+84 (0) 123 456 789').replace(/[^\\d+]/g, '')}`} className="hover:text-white transition-colors">{settings.company_phone || '+84 (0) 123 456 789'}</a>
                         </li>
                     </ul>
                 </div>

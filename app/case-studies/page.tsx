@@ -6,18 +6,94 @@ import { useLanguageStore, type Language } from '@/lib/languageStore';
 import { translations } from '@/lib/translations';
 import LanguageSwitcher from '@/components/site/LanguageSwitcher';
 
+interface CaseStudy {
+  id: number;
+  slug: string;
+  title_en: string;
+  title_vi: string;
+  title_zh_cn: string;
+  title_zh_tw: string;
+  client_type_en: string;
+  client_type_vi: string;
+  client_type_zh_cn: string;
+  client_type_zh_tw: string;
+  industry_en: string;
+  industry_vi: string;
+  industry_zh_cn: string;
+  industry_zh_tw: string;
+  summary_en: string;
+  summary_vi: string;
+  summary_zh_cn: string;
+  summary_zh_tw: string;
+  cover_image: string;
+  is_published: boolean;
+  featured: boolean;
+}
+
+interface SiteSettings {
+  company_email?: string;
+  company_phone?: string;
+  company_phone_whatsapp?: string;
+  address_en?: string;
+}
+
 export default function CaseStudiesPage() {
   const router = useRouter();
   const { language } = useLanguageStore();
   const [mounted, setMounted] = useState(false);
+  const [cases, setCases] = useState<CaseStudy[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [settings, setSettings] = useState<SiteSettings>({});
 
   useEffect(() => {
     setMounted(true);
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch('/api/site-settings');
+        const data = await res.json();
+        setSettings(data[0] || {});
+      } catch (error) {
+        console.error('Failed to fetch site settings:', error);
+      }
+    };
+    fetchSettings();
   }, []);
+
+  useEffect(() => {
+    if (mounted) {
+      fetchCaseStudies();
+      
+      // 自动刷新：每 5 秒检查一次新数据
+      const interval = setInterval(() => {
+        console.log('[Case Studies Page] Auto-refreshing case studies data...');
+        fetchCaseStudies();
+      }, 5000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [mounted]);
+
+  const fetchCaseStudies = async () => {
+    try {
+      const res = await fetch('/api/case-studies?t=' + Date.now()); // 防止缓存
+      const data = await res.json();
+      console.log('[Case Studies Page] Fetched case studies:', data);
+      setCases(data.filter((c: CaseStudy) => c.is_published));
+    } catch (error) {
+      console.error('Failed to fetch case studies:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!mounted) return null;
 
   const t = translations[language as Language] || translations.en;
+
+  const getField = (caseStudy: CaseStudy, field: string) => {
+    const key = `${field}_${language === 'vi' ? 'vi' : language === 'zh_cn' ? 'zh_cn' : language === 'zh_tw' ? 'zh_tw' : 'en'}`;
+    return caseStudy[key as keyof CaseStudy] || caseStudy[`${field}_en` as keyof CaseStudy] || '';
+  };
 
     return (
       <>
@@ -431,15 +507,15 @@ export default function CaseStudiesPage() {
                     <ul className="space-y-4 text-sm text-gray-400">
                         <li className="flex items-start gap-3">
                             <i className="ph ph-map-pin-line text-lg text-brand-primary shrink-0"></i>
-                            <span>District 1, Ho Chi Minh City,<br />Vietnam</span>
+                            <span>{settings.address_en || 'District 1, Ho Chi Minh City,<br />Vietnam'}</span>
                         </li>
                         <li className="flex items-center gap-3">
                             <i className="ph ph-envelope-simple text-lg text-brand-primary shrink-0"></i>
-                            <a href="mailto:hello@mediatoday.com.vn" className="hover:text-white transition-colors">hello@mediatoday.com.vn</a>
+                            <a href={`mailto:${settings.company_email || 'hello@mediatoday.com.vn'}`} className="hover:text-white transition-colors">{settings.company_email || 'hello@mediatoday.com.vn'}</a>
                         </li>
                         <li className="flex items-center gap-3">
                             <i className="ph ph-phone text-lg text-brand-primary shrink-0"></i>
-                            <span>+84 (0) 123 456 789</span>
+                            <a href={`tel:${(settings.company_phone || '+84 (0) 123 456 789').replace(/[^\\d+]/g, '')}`} className="hover:text-white transition-colors">{settings.company_phone || '+84 (0) 123 456 789'}</a>
                         </li>
                     </ul>
                 </div>

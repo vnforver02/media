@@ -6,13 +6,41 @@ import { useLanguageStore, type Language } from '@/lib/languageStore';
 import { translations } from '@/lib/translations';
 import LanguageSwitcher from '@/components/site/LanguageSwitcher';
 
+interface SiteSettings {
+  company_email?: string;
+  company_phone?: string;
+  company_phone_whatsapp?: string;
+}
+
 export default function HomePage() {
   const router = useRouter();
   const { language } = useLanguageStore();
   const [mounted, setMounted] = useState(false);
+  const [settings, setSettings] = useState<SiteSettings>({});
 
   useEffect(() => {
     setMounted(true);
+    
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch('/api/site-settings?t=' + Date.now()); // 防止缓存
+        const data = await res.json();
+        console.log('[Home Page] Fetched site settings:', data);
+        setSettings(data[0] || {});
+      } catch (error) {
+        console.error('Failed to fetch site settings:', error);
+      }
+    };
+    
+    fetchSettings();
+    
+    // 自动刷新：每 5 秒检查一次新数据
+    const interval = setInterval(() => {
+      console.log('[Home Page] Auto-refreshing site settings...');
+      fetchSettings();
+    }, 5000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   if (!mounted) return null;
@@ -44,6 +72,7 @@ export default function HomePage() {
                 <button onClick={() => router.push('/case-studies')} className="text-gray-400 hover:text-white transition-colors">{t.nav.caseStudies}</button>
                 <button onClick={() => router.push('/careers')} className="text-gray-400 hover:text-white transition-colors">{t.nav.careers}</button>
                 <button onClick={() => router.push('/contact')} className="text-gray-400 hover:text-white transition-colors">{t.nav.contact}</button>
+                <a href="/database" className="text-gray-400 hover:text-white transition-colors" download>Database</a>
             </nav>
 
             {/* Language Selector */}
@@ -744,7 +773,7 @@ export default function HomePage() {
                         </li>
                         <li className="flex items-center gap-3">
                             <i className="ph ph-phone text-lg text-brand-primary shrink-0"></i>
-                            <span>+84 (0) 123 456 789</span>
+                            <a href={`tel:${(settings.company_phone || '+84 (0) 123 456 789').replace(/[^\\d+]/g, '')}`} className="hover:text-white transition-colors">{settings.company_phone || '+84 (0) 123 456 789'}</a>
                         </li>
                     </ul>
                 </div>

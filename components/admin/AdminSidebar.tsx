@@ -24,7 +24,6 @@ const menuItems: SidebarItem[] = [
   { label: 'Languages', icon: 'ph-globe', href: '/admin/languages' },
   { label: 'Media', icon: 'ph-image', href: '/admin/media' },
   { label: 'Database', icon: 'ph-database', href: '/admin/database' },
-  { label: 'Admin Users', icon: 'ph-users', href: '/admin/users' },
 ];
 
 export function AdminSidebar() {

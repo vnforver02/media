@@ -6,13 +6,49 @@ import { useLanguageStore, type Language } from '@/lib/languageStore';
 import { translations } from '@/lib/translations';
 import LanguageSwitcher from '@/components/site/LanguageSwitcher';
 
+interface SiteSettings {
+  company_email?: string;
+  company_phone?: string;
+  company_phone_whatsapp?: string;
+  address_en?: string;
+  address_vi?: string;
+  address_zh_cn?: string;
+  address_zh_tw?: string;
+  social_facebook?: string;
+  social_linkedin?: string;
+  social_instagram?: string;
+}
+
 export default function ContactPage() {
   const router = useRouter();
   const { language } = useLanguageStore();
   const [mounted, setMounted] = useState(false);
+  const [settings, setSettings] = useState<SiteSettings>({});
 
   useEffect(() => {
     setMounted(true);
+    
+    // 获取网站设置
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch('/api/site-settings?t=' + Date.now()); // 防止缓存
+        const data = await res.json();
+        console.log('[Contact Page] Fetched site settings:', data);
+        setSettings(data[0] || {});
+      } catch (error) {
+        console.error('Failed to fetch site settings:', error);
+      }
+    };
+    
+    fetchSettings();
+    
+    // 自动刷新：每 5 秒检查一次新数据
+    const interval = setInterval(() => {
+      console.log('[Contact Page] Auto-refreshing site settings...');
+      fetchSettings();
+    }, 5000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   if (!mounted) return null;
@@ -90,23 +126,23 @@ export default function ContactPage() {
                             <h3 className="text-lg font-bold text-white mb-6 font-display">Chat With Us</h3>
                             
                             <div className="space-y-6 text-sm">
-                                <a href="mailto:hello@mediatoday.com.vn" className="flex items-start gap-4 hover:translate-x-1 transition-transform">
+                                <a href={`mailto:${settings.company_email || 'hello@mediatoday.com.vn'}`} className="flex items-start gap-4 hover:translate-x-1 transition-transform">
                                     <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0">
                                         <i className="ph-fill ph-envelope-simple text-blue-500 text-lg"></i>
                                     </div>
                                     <div>
                                         <p className="text-gray-500 font-medium mb-1 uppercase tracking-wider text-[10px]">Email Us</p>
-                                        <p className="text-white font-medium">hello@mediatoday.com.vn</p>
+                                        <p className="text-white font-medium">{settings.company_email || 'hello@mediatoday.com.vn'}</p>
                                     </div>
                                 </a>
                                 
-                                <a href="tel:+84123456789" className="flex items-start gap-4 hover:translate-x-1 transition-transform">
+                                <a href={`tel:${(settings.company_phone || '+84 (0) 123 456 789').replace(/[^\d+]/g, '')}`} className="flex items-start gap-4 hover:translate-x-1 transition-transform">
                                     <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
                                         <i className="ph-fill ph-phone text-green-500 text-lg"></i>
                                     </div>
                                     <div>
                                         <p className="text-gray-500 font-medium mb-1 uppercase tracking-wider text-[10px]">Call Us</p>
-                                        <p className="text-white font-medium">+84 (0) 123 456 789</p>
+                                        <p className="text-white font-medium">{settings.company_phone || '+84 (0) 123 456 789'}</p>
                                     </div>
                                 </a>
                             </div>
@@ -121,7 +157,7 @@ export default function ContactPage() {
                                     <i className="ph-fill ph-map-pin text-brand-accent text-lg"></i>
                                 </div>
                                 <div className="text-sm">
-                                    <p className="text-gray-300 leading-relaxed">Level 12, Nexus Tower<br />Nguyen Huu Canh Street, District 1<br />Ho Chi Minh City, Vietnam</p>
+                                    <p className="text-gray-300 leading-relaxed">{settings.address_en || 'Level 12, Nexus Tower<br />Nguyen Huu Canh Street, District 1<br />Ho Chi Minh City, Vietnam'}</p>
                                 </div>
                             </div>
 
@@ -328,15 +364,15 @@ export default function ContactPage() {
                     <ul className="space-y-4 text-sm text-gray-400">
                         <li className="flex items-start gap-3">
                             <i className="ph ph-map-pin-line text-lg text-brand-primary shrink-0"></i>
-                            <span>District 1, Ho Chi Minh City,<br />Vietnam</span>
+                            <span>{settings.address_en || 'District 1, Ho Chi Minh City,<br />Vietnam'}</span>
                         </li>
                         <li className="flex items-center gap-3">
                             <i className="ph ph-envelope-simple text-lg text-brand-primary shrink-0"></i>
-                            <a href="mailto:hello@mediatoday.com.vn" className="hover:text-white transition-colors">hello@mediatoday.com.vn</a>
+                            <a href={`mailto:${settings.company_email || 'hello@mediatoday.com.vn'}`} className="hover:text-white transition-colors">{settings.company_email || 'hello@mediatoday.com.vn'}</a>
                         </li>
                         <li className="flex items-center gap-3">
                             <i className="ph ph-phone text-lg text-brand-primary shrink-0"></i>
-                            <span>+84 (0) 123 456 789</span>
+                            <a href={`tel:${(settings.company_phone || '+84 (0) 123 456 789').replace(/[^\\d+]/g, '')}`} className="hover:text-white transition-colors">{settings.company_phone || '+84 (0) 123 456 789'}</a>
                         </li>
                     </ul>
                 </div>

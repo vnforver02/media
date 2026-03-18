@@ -6,17 +6,92 @@ import { useLanguageStore, type Language } from '@/lib/languageStore';
 import { translations } from '@/lib/translations';
 import LanguageSwitcher from '@/components/site/LanguageSwitcher';
 
+interface Job {
+  id: number;
+  slug: string;
+  title_en: string;
+  title_vi: string;
+  title_zh_cn: string;
+  title_zh_tw: string;
+  department_en: string;
+  department_vi: string;
+  department_zh_cn: string;
+  department_zh_tw: string;
+  location_en: string;
+  location_vi: string;
+  location_zh_cn: string;
+  location_zh_tw: string;
+  employment_type_en: string;
+  employment_type_vi: string;
+  employment_type_zh_cn: string;
+  employment_type_zh_tw: string;
+  is_published: boolean;
+  featured: boolean;
+}
+
+interface SiteSettings {
+  company_email?: string;
+  company_phone?: string;
+  company_phone_whatsapp?: string;
+  address_en?: string;
+}
+
 export default function CareersPage() {
   const router = useRouter();
   const { language } = useLanguageStore();
   const [mounted, setMounted] = useState(false);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [settings, setSettings] = useState<SiteSettings>({});
   const t = translations[language as Language] || translations.en;
 
   useEffect(() => {
     setMounted(true);
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch('/api/site-settings');
+        const data = await res.json();
+        setSettings(data[0] || {});
+      } catch (error) {
+        console.error('Failed to fetch site settings:', error);
+      }
+    };
+    fetchSettings();
   }, []);
 
+  useEffect(() => {
+    if (mounted) {
+      fetchJobs();
+      
+      // 自动刷新：每 5 秒检查一次新数据
+      const interval = setInterval(() => {
+        console.log('[Careers Page] Auto-refreshing jobs data...');
+        fetchJobs();
+      }, 5000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [mounted]);
+
+  const fetchJobs = async () => {
+    try {
+      const res = await fetch('/api/jobs?t=' + Date.now()); // 防止缓存
+      const data = await res.json();
+      console.log('[Careers Page] Fetched jobs:', data);
+      setJobs(data.filter((j: Job) => j.is_published));
+    } catch (error) {
+      console.error('Failed to fetch jobs:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!mounted) return null;
+
+  const getField = (job: Job, field: string) => {
+    const key = `${field}_${language === 'vi' ? 'vi' : language === 'zh_cn' ? 'zh_cn' : language === 'zh_tw' ? 'zh_tw' : 'en'}`;
+    return job[key as keyof Job] || job[`${field}_en` as keyof Job] || '';
+  };
 
     return (
       <>
@@ -505,15 +580,15 @@ export default function CareersPage() {
                     <ul className="space-y-4 text-sm text-gray-400">
                         <li className="flex items-start gap-3">
                             <i className="ph ph-map-pin-line text-lg text-brand-primary shrink-0"></i>
-                            <span>District 1, Ho Chi Minh City, Vietnam</span>
+                            <span>{settings.address_en || 'District 1, Ho Chi Minh City, Vietnam'}</span>
                         </li>
                         <li className="flex items-center gap-3">
                             <i className="ph ph-envelope-simple text-lg text-brand-primary shrink-0"></i>
-                            <a href="mailto:hello@mediatoday.com.vn" className="hover:text-white transition-colors">hello@mediatoday.com.vn</a>
+                            <a href={`mailto:${settings.company_email || 'hello@mediatoday.com.vn'}`} className="hover:text-white transition-colors">{settings.company_email || 'hello@mediatoday.com.vn'}</a>
                         </li>
                         <li className="flex items-center gap-3">
                             <i className="ph ph-phone text-lg text-brand-primary shrink-0"></i>
-                            <span>+84 (0) 123 456 789</span>
+                            <a href={`tel:${(settings.company_phone || '+84 (0) 123 456 789').replace(/[^\\d+]/g, '')}`} className="hover:text-white transition-colors">{settings.company_phone || '+84 (0) 123 456 789'}</a>
                         </li>
                     </ul>
                 </div>

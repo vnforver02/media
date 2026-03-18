@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 
 interface Job {
   id: number;
@@ -100,6 +101,81 @@ export default function AdminCareersPage() {
     );
   }
 
+  const handleAddJob = async () => {
+    const newJob = {
+      slug: `job-${Date.now()}`,
+      title_en: 'New Position',
+      title_vi: 'Vị trí mới',
+      title_zh_cn: '新职位',
+      title_zh_tw: '新職位',
+      department_en: '',
+      department_vi: '',
+      department_zh_cn: '',
+      department_zh_tw: '',
+      location_en: '',
+      location_vi: '',
+      location_zh_cn: '',
+      location_zh_tw: '',
+      employment_type_en: 'Full-time',
+      employment_type_vi: 'Toàn thời gian',
+      employment_type_zh_cn: '全职',
+      employment_type_zh_tw: '全職',
+      overview_en: '',
+      overview_vi: '',
+      overview_zh_cn: '',
+      overview_zh_tw: '',
+      responsibilities_en: '',
+      responsibilities_vi: '',
+      responsibilities_zh_cn: '',
+      responsibilities_zh_tw: '',
+      requirements_en: '',
+      requirements_vi: '',
+      requirements_zh_cn: '',
+      requirements_zh_tw: '',
+      preferred_skills_en: '',
+      preferred_skills_vi: '',
+      preferred_skills_zh_cn: '',
+      preferred_skills_zh_tw: '',
+      benefits_en: '',
+      benefits_vi: '',
+      benefits_zh_cn: '',
+      benefits_zh_tw: '',
+      sort_order: jobs.length,
+      is_published: false,
+      featured: false,
+    };
+
+    try {
+      const res = await fetch(`/api/jobs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newJob),
+      });
+      if (res.ok) {
+        const created = await res.json();
+        window.location.href = `/admin/careers/edit/${created.id}`;
+      }
+    } catch (error) {
+      console.error('Failed to create job:', error);
+    }
+  };
+
+  const handleDeleteJob = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this job posting?')) return;
+    try {
+      const res = await fetch(`/api/jobs`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      if (res.ok) {
+        setJobs(jobs.filter(j => j.id !== id));
+      }
+    } catch (error) {
+      console.error('Failed to delete job:', error);
+    }
+  };
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -108,7 +184,9 @@ export default function AdminCareersPage() {
           <h1 className="text-4xl font-bold text-white mb-2">Careers & Job Management</h1>
           <p className="text-gray-400">Manage job postings and recruitment content</p>
         </div>
-        <button className="flex items-center gap-2 px-6 py-3 rounded-lg bg-brand-gradient text-white font-medium hover:shadow-[0_0_30px_rgba(59,130,246,0.3)] hover:scale-105 active:scale-95 transition-all">
+        <button 
+          onClick={handleAddJob}
+          className="flex items-center gap-2 px-6 py-3 rounded-lg bg-brand-gradient text-white font-medium hover:shadow-[0_0_30px_rgba(59,130,246,0.3)] hover:scale-105 active:scale-95 transition-all">
           <i className="ph ph-plus-circle"></i>
           Post New Job
         </button>
@@ -199,9 +277,13 @@ export default function AdminCareersPage() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="p-2 rounded-lg hover:bg-gray-800 transition-colors text-gray-400 hover:text-white" title="Edit">
+                      <Link 
+                        href={`/admin/careers/edit/${job.id}`}
+                        className="p-2 rounded-lg hover:bg-gray-800 transition-colors text-gray-400 hover:text-white" 
+                        title="Edit"
+                      >
                         <i className="ph ph-pencil-simple"></i>
-                      </button>
+                      </Link>
                       <button
                         onClick={() => togglePublish(job.id)}
                         className="p-2 rounded-lg hover:bg-gray-800 transition-colors text-gray-400 hover:text-white"
@@ -209,7 +291,11 @@ export default function AdminCareersPage() {
                       >
                         <i className={`ph ${job.is_published ? 'ph-eye-slash' : 'ph-eye'}`}></i>
                       </button>
-                      <button className="p-2 rounded-lg hover:bg-red-500/20 transition-colors text-gray-400 hover:text-red-400" title="Delete">
+                      <button 
+                        onClick={() => handleDeleteJob(job.id)}
+                        className="p-2 rounded-lg hover:bg-red-500/20 transition-colors text-gray-400 hover:text-red-400" 
+                        title="Delete"
+                      >
                         <i className="ph ph-trash"></i>
                       </button>
                     </div>

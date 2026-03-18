@@ -59,13 +59,24 @@ export async function PUT(request: Request) {
     const body = await request.json();
     const { id, ...updates } = body;
 
-    const setClause = Object.entries(updates)
-      .map(([key, value]) => `${key} = ${value === null ? 'NULL' : `'${String(value).replace(/'/g, "''")}'`}`)
-      .join(', ');
-
     const result = await sql`
       UPDATE faqs 
-      SET ${setClause}, updated_at = NOW()
+      SET 
+        question_en = COALESCE(${updates.question_en}, question_en),
+        question_vi = COALESCE(${updates.question_vi}, question_vi),
+        question_zh_cn = COALESCE(${updates.question_zh_cn}, question_zh_cn),
+        question_zh_tw = COALESCE(${updates.question_zh_tw}, question_zh_tw),
+        answer_en = COALESCE(${updates.answer_en}, answer_en),
+        answer_vi = COALESCE(${updates.answer_vi}, answer_vi),
+        answer_zh_cn = COALESCE(${updates.answer_zh_cn}, answer_zh_cn),
+        answer_zh_tw = COALESCE(${updates.answer_zh_tw}, answer_zh_tw),
+        category_en = COALESCE(${updates.category_en}, category_en),
+        category_vi = COALESCE(${updates.category_vi}, category_vi),
+        category_zh_cn = COALESCE(${updates.category_zh_cn}, category_zh_cn),
+        category_zh_tw = COALESCE(${updates.category_zh_tw}, category_zh_tw),
+        sort_order = COALESCE(${updates.sort_order}, sort_order),
+        is_published = COALESCE(${updates.is_published}, is_published),
+        updated_at = NOW()
       WHERE id = ${id}
       RETURNING *
     `;
